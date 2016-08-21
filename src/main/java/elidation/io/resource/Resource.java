@@ -8,6 +8,7 @@ import java.net.URL;
  */
 public interface Resource
 {
+    String NO_URL = "NO_URL";
 
     InputStream getInputStream();
 

@@ -11,6 +11,7 @@ import java.net.URL;
  */
 public class ClassPathResourceLoader extends AbstractResourceLoader {
 
+
     public ClassPathResourceLoader(String location)
     {
         super(location);
@@ -21,7 +22,7 @@ public class ClassPathResourceLoader extends AbstractResourceLoader {
             throw new RuntimeException();
         URL url = this.getClass().getClassLoader().getResource(location);
         if(url ==null )
-            throw new RuntimeException();
+            throw new RuntimeException(Resource.NO_URL);
         File file = new File(url.getFile());
         ClassPathResource classPathResource = new ClassPathResource(file);
 

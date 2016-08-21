@@ -2,12 +2,14 @@ package elidation;
 
 
 import elidation.io.ResourceParser.ValidationReader;
+import elidation.io.resource.Resource;
 import elidation.io.resourceloader.ClassPathResourceLoader;
 import elidation.io.resourceloader.ResourceLoader;
 import net.sf.json.JSONObject;
 import org.dom4j.Document;
 import org.dom4j.Element;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -25,27 +27,34 @@ public final class RegulationManager {
 
     private static final HashMap<String, Regulations> regulationsHashMap;
 
-    private static String validationXml = "validation.xml";
+    private String validationXml;
 
-    private RegulationManager(){}
+//    private RegulationManager(){}
 
     static
     {
         publicRegulations = Regulations.createRegulations("publicRegulations");
         regulationsHashMap = new HashMap<>();
         regulationsHashMap.put("publicRegulations", publicRegulations);
-        initInternal();
+//        initInternal();
+    }
+
+    public RegulationManager(){
+        validationXml = "validation.xml";
+    }
+
+    public RegulationManager(String fileName)
+    {
+        validationXml = fileName;
         initXml();
     }
 
     /**
      * 解析xml, 根据配置注册规则和回调函数
      */
-    private static void initXml(){
-        ResourceLoader resourceLoader = new ClassPathResourceLoader(validationXml);
-        Document document = ValidationReader.loadDocumentFromString(resourceLoader.getResource().getContentAsString());
-        Element root = document.getRootElement();
-        List<Element> regulationsList = root.elements("regulations");
+    private void initXml(){
+        //读取配置文件, 获取xml中的regulations元素
+        List<Element> regulationsList = getRegulationsElements();
         for(Element regulationsElem:regulationsList)
         {
             String regulationName = regulationsElem.attributeValue("name");
@@ -83,19 +92,37 @@ public final class RegulationManager {
 
     }
 
-    private static void putIfAbsent(Element regulationsElem, String regulationName)
+    private List<Element> getRegulationsElements()
+    {
+        List<Element> regulationsList;
+        try
+        {
+            ResourceLoader resourceLoader = new ClassPathResourceLoader(validationXml);
+            Document document = ValidationReader.loadDocumentFromString(resourceLoader.getResource().getContentAsString());
+            Element root = document.getRootElement();
+            regulationsList = root.elements("regulations");
+        }catch (RuntimeException e)
+        {
+            if(e.getLocalizedMessage().equals(Resource.NO_URL))
+                throw new RuntimeException("找不到文件: ["+validationXml+"]");
+            return new ArrayList<>(0);
+        }
+        return regulationsList;
+    }
+
+    private void putIfAbsent(Element regulationsElem, String regulationName)
     {
         if(!regulationsHashMap.containsKey(regulationName)) {
             Regulations newRegulations;
             if(regulationsElem.attributeValue("distinct").equals("true"))
-                newRegulations = RegulationManager.emptyRoles(regulationName);
+                newRegulations = emptyRoles(regulationName);
             else
-                newRegulations = RegulationManager.newRoles(regulationName);
+                newRegulations = newRoles(regulationName);
             regulationsHashMap.put(regulationName, newRegulations);
         }
     }
 
-    private static Class getCallingsClazz(String clazzName)
+    private Class getCallingsClazz(String clazzName)
     {
         try {
             return Class.forName(clazzName);
@@ -104,7 +131,7 @@ public final class RegulationManager {
         }
     }
 
-    private static Callings getCallings(String clazzName)
+    private Callings getCallings(String clazzName)
     {
         try {
             return (Callings) getCallingsClazz(clazzName).newInstance();
@@ -115,39 +142,39 @@ public final class RegulationManager {
 
 
 
-    private static void initInternal()
-    {
-        //RecordController
-        publicRegulations.addRule(Rule.createRole("limit", Validate.maxNNumericText(3)).setMsg("limit超出限制"));
-        publicRegulations.addRule(Rule.createRole("pageIndex", Validate.maxNNumericText(6)).setMsg("pageIndex超出限制"));
-        publicRegulations.addRule(Rule.createRole("opr", Validate.maxNText(30)).setMsg("opr不合法"));// TODO: 2016/8/3
-        publicRegulations.addRule(Rule.createRole("sid", Validate.maxNText(36)).setMsg("sid不符合格式"));
-        publicRegulations.addRule(Rule.createRole("startDate", Validate.isoDateTime()).setMsg("startDate不合法"));
-        publicRegulations.addRule(Rule.createRole("endDate", Validate.isoDateTime()).setMsg("endDate不合法"));
-        publicRegulations.addRule(Rule.createRole("Type", "(1|2|3|4|all)").setMsg("Type不合法"));
-        publicRegulations.addRule(Rule.createRole("Status", "[0-8]?").setMsg("Status不合法"));
-        publicRegulations.addRule(Rule.createRole("Name", ".{0,60}").setMsg("Name不合法"));// TODO: 2016/8/3 更严格一点
-        publicRegulations.addRule(Rule.createRole("order_id", "[0-9]{19}").setMsg("order_id不合法"));
+//    private static void initInternal()
+//    {
+//        //RecordController
+//        publicRegulations.addRule(Rule.createRole("limit", Validate.maxNNumericText(3)).setMsg("limit超出限制"));
+//        publicRegulations.addRule(Rule.createRole("pageIndex", Validate.maxNNumericText(6)).setMsg("pageIndex超出限制"));
+//        publicRegulations.addRule(Rule.createRole("opr", Validate.maxNText(30)).setMsg("opr不合法"));// TODO: 2016/8/3
+//        publicRegulations.addRule(Rule.createRole("sid", Validate.maxNText(36)).setMsg("sid不符合格式"));
+//        publicRegulations.addRule(Rule.createRole("startDate", Validate.isoDateTime()).setMsg("startDate不合法"));
+//        publicRegulations.addRule(Rule.createRole("endDate", Validate.isoDateTime()).setMsg("endDate不合法"));
+//        publicRegulations.addRule(Rule.createRole("Type", "(1|2|3|4|all)").setMsg("Type不合法"));
+//        publicRegulations.addRule(Rule.createRole("Status", "[0-8]?").setMsg("Status不合法"));
+//        publicRegulations.addRule(Rule.createRole("Name", ".{0,60}").setMsg("Name不合法"));// TODO: 2016/8/3 更严格一点
+//        publicRegulations.addRule(Rule.createRole("order_id", "[0-9]{19}").setMsg("order_id不合法"));
+//
+//        //BaseController
+//        publicRegulations.addRule(Rule.createRole("role", "(operator|audit)").setMsg("role不合法"));
+//        publicRegulations.addRule(Rule.createRole("serial_num", Validate.maxNNumericText(20)).setMsg("serial_num不合法"));
+//        publicRegulations.addRule(Rule.createRole("account", Validate.maxNText(32)).setMsg("account不合法"));
+//        publicRegulations.addRule(Rule.createRole("bank_account", Validate.maxNText(32)).setMsg("bank_account不合法"));
+//        publicRegulations.addRule(Rule.createRole("realtime", "(0|1)").setMsg("realtime不合法"));
+//        publicRegulations.addRule(Rule.createRole("agreement_id", Validate.maxNNumericText(20)).setMsg("agreement_id不合法"));
+//        publicRegulations.addRule(Rule.createRole("bank_account_name", ".{0,60}").setMsg("bank_account_name不合法"));
+//        publicRegulations.addRule(Rule.createRole("amount", "\\d*(\\.\\d\\d|\\.\\d)?").setCallAble(amount()).setMsg("amount不合法"));//重要
+//        publicRegulations.addRule(Rule.createRole("usage_type", Validate.maxNNumericText(5)).setMsg("usage_type不合法"));
+//
+//        //bankName
+//        publicRegulations.addRule(Rule.createRole("provinceId", Validate.maxNText(5)).setMsg("provinceId不合法"));
+//        publicRegulations.addRule(Rule.createRole("cityId", Validate.maxNText(5)).setMsg("cityId不合法"));
+//        publicRegulations.addRule(Rule.createRole("bankName", Validate.maxNText(50)).setMsg("bankName不合法"));
+//        publicRegulations.addRule(Rule.createRole("bankAccount", Validate.maxNText(32)).setMsg("bankAccount不合法"));
+//    }
 
-        //BaseController
-        publicRegulations.addRule(Rule.createRole("role", "(operator|audit)").setMsg("role不合法"));
-        publicRegulations.addRule(Rule.createRole("serial_num", Validate.maxNNumericText(20)).setMsg("serial_num不合法"));
-        publicRegulations.addRule(Rule.createRole("account", Validate.maxNText(32)).setMsg("account不合法"));
-        publicRegulations.addRule(Rule.createRole("bank_account", Validate.maxNText(32)).setMsg("bank_account不合法"));
-        publicRegulations.addRule(Rule.createRole("realtime", "(0|1)").setMsg("realtime不合法"));
-        publicRegulations.addRule(Rule.createRole("agreement_id", Validate.maxNNumericText(20)).setMsg("agreement_id不合法"));
-        publicRegulations.addRule(Rule.createRole("bank_account_name", ".{0,60}").setMsg("bank_account_name不合法"));
-        publicRegulations.addRule(Rule.createRole("amount", "\\d*(\\.\\d\\d|\\.\\d)?").setCallAble(amount()).setMsg("amount不合法"));//重要
-        publicRegulations.addRule(Rule.createRole("usage_type", Validate.maxNNumericText(5)).setMsg("usage_type不合法"));
-
-        //bankName
-        publicRegulations.addRule(Rule.createRole("provinceId", Validate.maxNText(5)).setMsg("provinceId不合法"));
-        publicRegulations.addRule(Rule.createRole("cityId", Validate.maxNText(5)).setMsg("cityId不合法"));
-        publicRegulations.addRule(Rule.createRole("bankName", Validate.maxNText(50)).setMsg("bankName不合法"));
-        publicRegulations.addRule(Rule.createRole("bankAccount", Validate.maxNText(32)).setMsg("bankAccount不合法"));
-    }
-
-    private static ValidateFunction amount()
+    private ValidateFunction amount()
     {
         ValidateFunction lamb = s->{
             if(s==null || s.trim().equals(""))
@@ -160,7 +187,7 @@ public final class RegulationManager {
         return lamb;
     }
 
-    public static Regulations getRegulations(String name)
+    public Regulations getRegulations(String name)
     {
         return regulationsHashMap.get(name);
     }
@@ -168,11 +195,11 @@ public final class RegulationManager {
 
 
 
-    public static Regulations publicRoles() {
+    public Regulations publicRoles() {
         return publicRegulations;
     }
 
-    public static Regulations newRoles(String regulationsName) {
+    public Regulations newRoles(String regulationsName) {
         Regulations regulations = Regulations.copyRegulations(regulationsName, publicRegulations);
         if(regulationsHashMap.containsKey(regulationsName))
         {
@@ -182,7 +209,7 @@ public final class RegulationManager {
         return regulations;
     }
 
-    public static Regulations emptyRoles(String regulationsName) {
+    public Regulations emptyRoles(String regulationsName) {
         Regulations regulations = Regulations.createRegulations(regulationsName);
         if(regulationsHashMap.containsKey(regulationsName))
         {
@@ -192,17 +219,17 @@ public final class RegulationManager {
         return regulations;
     }
 
-    public static void validate(String key, String value)
+    public void validate(String key, String value)
     {
         publicRegulations.validate(key, value);
     }
 
-    public static void validate(JSONObject jsonObject)
+    public void validate(JSONObject jsonObject)
     {
         publicRegulations.validate(jsonObject);
     }
 
-    public static void validate(String jsonStr)
+    public void validate(String jsonStr)
     {
         publicRegulations.validate(JSONObject.fromObject(jsonStr));
     }

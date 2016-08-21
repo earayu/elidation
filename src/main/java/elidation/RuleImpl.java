@@ -146,6 +146,7 @@ final class RuleImpl implements Rule {
 
     @Override
     public void validate(String target) {
+        // 验证类型, 这个功能还没用到
         if(typeClazzName!=null)
         {
             if(!target.getClass().getName().equals(typeClazzName))
