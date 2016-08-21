@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation>
+    <!--regulations没有name的时候默认为publicRegulations-->
+    <regulations callings="main.f.test.MyCallings">
+        <rule>
+            <name>earayu</name>
+            <regex>earayu123</regex>
+            <msg>不是earayu123</msg>
+        </rule>
+        <rule>
+            <name>id</name>
+            <regex>[0-9a-zA-Z_$]+</regex>
+            <call>id</call>
+        </rule>
+    </regulations>
+
+    <!--distinct=true时生成空的集合, 否则会继承publicRegulations的全部规则-->
+    <regulations name="eee" distinct="true">
+        <rule>
+            <name>eee</name>
+            <regex>eeeee</regex>
+            <msg>不是afddasasdf</msg>
+        </rule>
+    </regulations>
+
+</validation>
+
