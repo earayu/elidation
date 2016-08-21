@@ -14,10 +14,38 @@
 
 
 ```java
-使用方便:
+最基础用法:
 RegulationManager regulationManager = new RegulationManager("validation.xml");
 //有3个重载的validate方法, 除了key-value形式。还可以校验JSONObject格式的
 regulationManager.validate("id", "$%^&*(");
+
+
+
+
+回调函数:
+如果想给key为id的字符串指定一个回调函数。参见以下配置文件
+1. 先在regulations TAG中指定一个全类名`<regulations callings="test.MyCallings">`。该类必须实现Callings接口
+2. 在rule中添加`<call>id</call>`。
+3. 在MyCallings类中实现id函数:
+`
+  public ValidateFunction id()
+    {
+        ValidateFunction validateFunction =
+                (str)->
+                {
+                    System.out.println("ads");
+                    System.out.println(str);
+                };
+        return validateFunction;
+    }
+`
+
+
+命名空间:
+除了publicRegulations, 还可以自定义命名空间。
+publicRegulations.getRegulations(String name)方法可以获取相应的命名空间。
+
+新创建的命名空间可以是空的, 也可以继承publicRegulations的全部规则。
 ```
 
 
