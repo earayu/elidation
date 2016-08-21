@@ -115,9 +115,9 @@ public final class RegulationManager {
         if(!regulationsHashMap.containsKey(regulationName)) {
             Regulations newRegulations;
             if(regulationsElem.attributeValue("distinct").equals("true"))
-                newRegulations = emptyRoles(regulationName);
+                newRegulations = emptyRules(regulationName);
             else
-                newRegulations = newRoles(regulationName);
+                newRegulations = newRules(regulationName);
             regulationsHashMap.put(regulationName, newRegulations);
         }
     }
@@ -195,11 +195,11 @@ public final class RegulationManager {
 
 
 
-    public Regulations publicRoles() {
+    public Regulations publicRules() {
         return publicRegulations;
     }
 
-    public Regulations newRoles(String regulationsName) {
+    public Regulations newRules(String regulationsName) {
         Regulations regulations = Regulations.copyRegulations(regulationsName, publicRegulations);
         if(regulationsHashMap.containsKey(regulationsName))
         {
@@ -209,7 +209,7 @@ public final class RegulationManager {
         return regulations;
     }
 
-    public Regulations emptyRoles(String regulationsName) {
+    public Regulations emptyRules(String regulationsName) {
         Regulations regulations = Regulations.createRegulations(regulationsName);
         if(regulationsHashMap.containsKey(regulationsName))
         {
