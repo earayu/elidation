@@ -199,8 +199,32 @@ public final class RegulationManager {
         return publicRegulations;
     }
 
+    /**
+     * 从publicRegulations集合继承所有规则
+     * @param regulationsName
+     * @return
+     */
     public Regulations newRules(String regulationsName) {
-        Regulations regulations = Regulations.copyRegulations(regulationsName, publicRegulations);
+//        Regulations regulations = Regulations.copyRegulations(regulationsName, publicRegulations);
+//        if(regulationsHashMap.containsKey(regulationsName))
+//        {
+//            throw new IllegalArgumentException("该规则集合已经存在");
+//        }
+//        regulationsHashMap.put(regulationsName, regulations);
+//        return regulations;
+        return newRules(regulationsName, "publicRegulations");
+    }
+
+    /**
+     * 从from集合继承所有规则
+     * @param regulationsName
+     * @param from
+     * @return
+     */
+    public Regulations newRules(String regulationsName, String from) {
+        if(!regulationsHashMap.containsKey(from))
+            throw new IllegalArgumentException("规则集合 " + from + " 不存在");
+        Regulations regulations = Regulations.copyRegulations(regulationsName, regulationsHashMap.get(from));
         if(regulationsHashMap.containsKey(regulationsName))
         {
             throw new IllegalArgumentException("该规则集合已经存在");
@@ -209,6 +233,11 @@ public final class RegulationManager {
         return regulations;
     }
 
+    /**
+     * 创建空的规则集合
+     * @param regulationsName
+     * @return
+     */
     public Regulations emptyRules(String regulationsName) {
         Regulations regulations = Regulations.createRegulations(regulationsName);
         if(regulationsHashMap.containsKey(regulationsName))
@@ -234,5 +263,31 @@ public final class RegulationManager {
         publicRegulations.validate(JSONObject.fromObject(jsonStr));
     }
 
+
+
+
+
+
+
+
+
+
+    /*****************************************************************************************/
+
+
+    static String jsonStr = "{\n" +
+            "    \"name\":\"earayu\",\n" +
+            "    \"year\":\n" +
+            "    {\n" +
+            "        \"birth\":\"1994\",\n" +
+            "        \"now\":2016\n" +
+            "    }\n" +
+            "}";
+
+    public static void main(String[] args)
+    {
+        RegulationManager regulationManager = new RegulationManager("validation.xml");
+        regulationManager.validate(jsonStr);
+    }
 
 }

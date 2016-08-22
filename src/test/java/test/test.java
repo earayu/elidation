@@ -9,11 +9,20 @@ import org.junit.Test;
 public class test
 {
 
+    static String jsonStr = "{\n" +
+            "    \"name\":\"earayu\",\n" +
+            "    \"year\":\n" +
+            "    {\n" +
+            "        \"birth\":\"1994\",\n" +
+            "        \"now\":2016\n" +
+            "    }\n" +
+            "}";
+
     @Test
     public void test2()
     {
         RegulationManager regulationManager = new RegulationManager("validation.xml");
-        regulationManager.getRegulations("eee").validate("id", "$%^&*(");
+        regulationManager.validate(jsonStr);
     }
 
 

@@ -65,6 +65,10 @@ final class RegulationsImpl implements Regulations {
         }
     }
 
+    /**
+     * 递归校验JSONObject
+     * @param jsonObject
+     */
     @Override
     public void validate(JSONObject jsonObject) {
         for(Object keyObj:jsonObject.keySet())
@@ -72,7 +76,10 @@ final class RegulationsImpl implements Regulations {
             String key = String.valueOf(keyObj);
             if(containsRole(key))
             {
-                getRule(key).validate(jsonObject.getString(key));
+                Object value = jsonObject.get(key);
+                if(value instanceof JSONObject)
+                    validate((JSONObject)value);
+                getRule(key).validate(String.valueOf(value));
             }
         }
     }

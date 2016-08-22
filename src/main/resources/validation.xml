@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <validation>
     <!--regulations没有name的时候默认为publicRegulations-->
-    <regulations callings="test.MyCallings">
+    <regulations>
         <!--rule可以有4个元素 name regex msg call-->
         <rule>
             <name>earayu</name>
@@ -11,7 +11,23 @@
         <rule>
             <name>id</name>
             <regex>[0-9a-zA-Z_$]+</regex>
-            <call>id</call>
+            <!--<call>id</call>-->
+        </rule>
+        <rule>
+            <name>name</name>
+            <regex>earayu</regex>
+        </rule>
+        <!--可以声明一个规则为空的校验-->
+        <rule>
+            <name>year</name>
+e        </rule>
+        <rule>
+            <name>birth</name>
+            <regex>1994</regex>
+        </rule>
+        <rule>
+            <name>now</name>
+            <regex>2016</regex>
         </rule>
     </regulations>
 
