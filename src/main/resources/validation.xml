@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <validation>
     <!--regulations没有name的时候默认为publicRegulations-->
-    <regulations>
+    <regulations callings="test.MyCallings">
         <!--rule可以有4个元素 name regex msg call-->
         <rule>
             <name>earayu</name>
@@ -27,7 +27,7 @@ e        </rule>
         </rule>
         <rule>
             <name>now</name>
-            <regex>2016</regex>
+            <call>now</call>
         </rule>
     </regulations>
 

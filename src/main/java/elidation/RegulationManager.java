@@ -272,22 +272,4 @@ public final class RegulationManager {
 
 
 
-    /*****************************************************************************************/
-
-
-    static String jsonStr = "{\n" +
-            "    \"name\":\"earayu\",\n" +
-            "    \"year\":\n" +
-            "    {\n" +
-            "        \"birth\":\"1994\",\n" +
-            "        \"now\":2016\n" +
-            "    }\n" +
-            "}";
-
-    public static void main(String[] args)
-    {
-        RegulationManager regulationManager = new RegulationManager("validation.xml");
-        regulationManager.validate(jsonStr);
-    }
-
 }
