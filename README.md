@@ -46,8 +46,13 @@ regulationManager.validate("id", "$%^&*(");
 publicRegulations.getRegulations(String name)方法可以获取相应的命名空间。
 
 新创建的命名空间可以是空的, 也可以继承publicRegulations的全部规则。
+
+相同集合的校验规则(Rule)可以定义在xml的不同<regulations>标签下
 ```
 
+
+模式:
+>提供了STRICT和SIMPLE模式, 区别在于：如果使用STRICT模式校验不存在的key,则会抛出异常;而SIMPLE模式不会
 
 
 配置文件:
@@ -56,7 +61,7 @@ publicRegulations.getRegulations(String name)方法可以获取相应的命名�
 <?xml version="1.0" encoding="UTF-8"?>
 <validation>
     <!--regulations没有name的时候默认为publicRegulations-->
-    <regulations callings="test.MyCallings">
+    <regulations callings="test.MyCallings" mode="simple">
         <!--rule可以有4个元素 name regex msg call-->
         <rule>
             <name>earayu</name>
