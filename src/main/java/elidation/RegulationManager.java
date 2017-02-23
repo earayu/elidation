@@ -1,6 +1,8 @@
 package elidation;
 
 
+import elidation.config.Mode;
+import elidation.config.RegulationManagerAutoConfig;
 import elidation.io.ResourceParser.ValidationReader;
 import elidation.io.resource.Resource;
 import elidation.io.resourceloader.ClassPathResourceLoader;
@@ -9,9 +11,12 @@ import net.sf.json.JSONObject;
 import org.dom4j.Document;
 import org.dom4j.Element;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+
+import static elidation.config.Mode.SIMPLE;
+import static elidation.config.Mode.STRICT;
+import static elidation.utils.StringUitls.*;
+import static elidation.config.RegulationManagerAutoConfig.*;
 
 /**
  * 字符串校验
@@ -27,25 +32,35 @@ public final class RegulationManager {
 
     private static final HashMap<String, Regulations> regulationsHashMap;
 
-    private String validationXml;
+    private RegulationManagerAutoConfig config;
 
-//    private RegulationManager(){}
+//    private String validationXml;
+    private static final List<String> validationXmlList;
+
 
     static
     {
-        publicRegulations = Regulations.createRegulations("publicRegulations");
+        publicRegulations = Regulations.createRegulations(DEFAULT_PUBLIC_CONFIGURATION_NAME, STRICT);
         regulationsHashMap = new HashMap<>();
-        regulationsHashMap.put("publicRegulations", publicRegulations);
-//        initInternal();
+        regulationsHashMap.put(DEFAULT_PUBLIC_CONFIGURATION_NAME, publicRegulations);
+        validationXmlList = new ArrayList<>();
     }
 
     public RegulationManager(){
-        validationXml = "validation.xml";
+//        validationXml = DEFAULT_XML_CONFIGUATION_FILE;
+        validationXmlList.add(DEFAULT_XML_CONFIGUATION_FILE);
     }
 
     public RegulationManager(String fileName)
     {
-        validationXml = fileName;
+//        validationXml = fileName;
+        validationXmlList.add(fileName);
+        initXml();
+    }
+
+    public RegulationManager(String[] fileNames)
+    {
+        validationXmlList.addAll(Arrays.asList(fileNames));
         initXml();
     }
 
@@ -58,8 +73,21 @@ public final class RegulationManager {
         for(Element regulationsElem:regulationsList)
         {
             String regulationName = regulationsElem.attributeValue("name");
+            Mode mode;
+            String modeStr = regulationsElem.attributeValue("mode");
+            if(modeStr ==null || isEqualsIgnoreCase(modeStr, "strict"))
+            {
+                mode = STRICT;
+            }else if(isEqualsIgnoreCase(modeStr, "simple")) {
+                mode = SIMPLE;
+            }else
+            {
+                throw new RuntimeException("unknown mode [" + modeStr + "]");
+            }
+
             if(regulationName==null)
-                regulationName = "publicRegulations";
+                regulationName = DEFAULT_PUBLIC_CONFIGURATION_NAME;
+
             //生成回调类的实例
             String clazzName = regulationsElem.attributeValue("callings");
             Callings callings = null;
@@ -70,7 +98,7 @@ public final class RegulationManager {
                 callingClazz = getCallingsClazz(clazzName);
             }
             //生成规则集合
-            putIfAbsent(regulationsElem, regulationName);
+            putIfAbsent(regulationsElem, regulationName, mode);
 
             Regulations regulations = regulationsHashMap.get(regulationName);
 
@@ -94,30 +122,35 @@ public final class RegulationManager {
 
     private List<Element> getRegulationsElements()
     {
-        List<Element> regulationsList;
-        try
-        {
-            ResourceLoader resourceLoader = new ClassPathResourceLoader(validationXml);
-            Document document = ValidationReader.loadDocumentFromString(resourceLoader.getResource().getContentAsString());
-            Element root = document.getRootElement();
-            regulationsList = root.elements("regulations");
-        }catch (RuntimeException e)
-        {
-            if(e.getLocalizedMessage().equals(Resource.NO_URL))
-                throw new RuntimeException("找不到文件: ["+validationXml+"]");
-            return new ArrayList<>(0);
+        List<Element> regulationsList = new ArrayList<>();
+        for(String validationXml:validationXmlList) {
+            try {
+                ResourceLoader resourceLoader = new ClassPathResourceLoader(validationXml);
+                Document document = ValidationReader.loadDocumentFromString(resourceLoader.getResource().getContentAsString());
+                Element root = document.getRootElement();
+                regulationsList.addAll(root.elements("regulations"));
+            } catch (RuntimeException e) {
+                if (e.getLocalizedMessage().equals(Resource.NO_URL))
+                    throw new RuntimeException("找不到文件: [" + validationXml + "]");
+                return new ArrayList<>(0);
+            }
         }
         return regulationsList;
     }
 
-    private void putIfAbsent(Element regulationsElem, String regulationName)
+    /**
+     * 将规则集合添加进regulationsHashMap
+     * @param regulationsElem
+     * @param regulationName
+     */
+    private void putIfAbsent(Element regulationsElem, String regulationName, Mode mode)
     {
         if(!regulationsHashMap.containsKey(regulationName)) {
             Regulations newRegulations;
-            if(regulationsElem.attributeValue("distinct").equals("true"))
-                newRegulations = emptyRules(regulationName);
+            if(isEquals(regulationsElem.attributeValue("distinct"), "true"))
+                newRegulations = emptyRules(regulationName, mode);
             else
-                newRegulations = newRules(regulationName);
+                newRegulations = newRules(regulationName, mode);
             regulationsHashMap.put(regulationName, newRegulations);
         }
     }
@@ -141,52 +174,6 @@ public final class RegulationManager {
     }
 
 
-
-//    private static void initInternal()
-//    {
-//        //RecordController
-//        publicRegulations.addRule(Rule.createRole("limit", Validate.maxNNumericText(3)).setMsg("limit超出限制"));
-//        publicRegulations.addRule(Rule.createRole("pageIndex", Validate.maxNNumericText(6)).setMsg("pageIndex超出限制"));
-//        publicRegulations.addRule(Rule.createRole("opr", Validate.maxNText(30)).setMsg("opr不合法"));// TODO: 2016/8/3
-//        publicRegulations.addRule(Rule.createRole("sid", Validate.maxNText(36)).setMsg("sid不符合格式"));
-//        publicRegulations.addRule(Rule.createRole("startDate", Validate.isoDateTime()).setMsg("startDate不合法"));
-//        publicRegulations.addRule(Rule.createRole("endDate", Validate.isoDateTime()).setMsg("endDate不合法"));
-//        publicRegulations.addRule(Rule.createRole("Type", "(1|2|3|4|all)").setMsg("Type不合法"));
-//        publicRegulations.addRule(Rule.createRole("Status", "[0-8]?").setMsg("Status不合法"));
-//        publicRegulations.addRule(Rule.createRole("Name", ".{0,60}").setMsg("Name不合法"));// TODO: 2016/8/3 更严格一点
-//        publicRegulations.addRule(Rule.createRole("order_id", "[0-9]{19}").setMsg("order_id不合法"));
-//
-//        //BaseController
-//        publicRegulations.addRule(Rule.createRole("role", "(operator|audit)").setMsg("role不合法"));
-//        publicRegulations.addRule(Rule.createRole("serial_num", Validate.maxNNumericText(20)).setMsg("serial_num不合法"));
-//        publicRegulations.addRule(Rule.createRole("account", Validate.maxNText(32)).setMsg("account不合法"));
-//        publicRegulations.addRule(Rule.createRole("bank_account", Validate.maxNText(32)).setMsg("bank_account不合法"));
-//        publicRegulations.addRule(Rule.createRole("realtime", "(0|1)").setMsg("realtime不合法"));
-//        publicRegulations.addRule(Rule.createRole("agreement_id", Validate.maxNNumericText(20)).setMsg("agreement_id不合法"));
-//        publicRegulations.addRule(Rule.createRole("bank_account_name", ".{0,60}").setMsg("bank_account_name不合法"));
-//        publicRegulations.addRule(Rule.createRole("amount", "\\d*(\\.\\d\\d|\\.\\d)?").setCallAble(amount()).setMsg("amount不合法"));//重要
-//        publicRegulations.addRule(Rule.createRole("usage_type", Validate.maxNNumericText(5)).setMsg("usage_type不合法"));
-//
-//        //bankName
-//        publicRegulations.addRule(Rule.createRole("provinceId", Validate.maxNText(5)).setMsg("provinceId不合法"));
-//        publicRegulations.addRule(Rule.createRole("cityId", Validate.maxNText(5)).setMsg("cityId不合法"));
-//        publicRegulations.addRule(Rule.createRole("bankName", Validate.maxNText(50)).setMsg("bankName不合法"));
-//        publicRegulations.addRule(Rule.createRole("bankAccount", Validate.maxNText(32)).setMsg("bankAccount不合法"));
-//    }
-
-    private ValidateFunction amount()
-    {
-        ValidateFunction lamb = s->{
-            if(s==null || s.trim().equals(""))
-                throw new RuntimeException(s + "不能为空");//非空约束
-            Double amount = Double.valueOf(s);
-            if(amount > 1_000_000_000_000d) {
-                throw new RuntimeException(s + "金额超过最大限制");
-            }
-        };
-        return lamb;
-    }
-
     public Regulations getRegulations(String name)
     {
         return regulationsHashMap.get(name);
@@ -204,15 +191,8 @@ public final class RegulationManager {
      * @param regulationsName
      * @return
      */
-    public Regulations newRules(String regulationsName) {
-//        Regulations regulations = Regulations.copyRegulations(regulationsName, publicRegulations);
-//        if(regulationsHashMap.containsKey(regulationsName))
-//        {
-//            throw new IllegalArgumentException("该规则集合已经存在");
-//        }
-//        regulationsHashMap.put(regulationsName, regulations);
-//        return regulations;
-        return newRules(regulationsName, "publicRegulations");
+    public Regulations newRules(String regulationsName, Mode mode) {
+        return newRules(regulationsName, DEFAULT_PUBLIC_CONFIGURATION_NAME, mode);
     }
 
     /**
@@ -221,10 +201,10 @@ public final class RegulationManager {
      * @param from
      * @return
      */
-    public Regulations newRules(String regulationsName, String from) {
+    public final Regulations newRules(String regulationsName, String from, Mode mode) {
         if(!regulationsHashMap.containsKey(from))
             throw new IllegalArgumentException("规则集合 " + from + " 不存在");
-        Regulations regulations = Regulations.copyRegulations(regulationsName, regulationsHashMap.get(from));
+        Regulations regulations = Regulations.copyRegulations(regulationsName, regulationsHashMap.get(from), mode);
         if(regulationsHashMap.containsKey(regulationsName))
         {
             throw new IllegalArgumentException("该规则集合已经存在");
@@ -238,8 +218,8 @@ public final class RegulationManager {
      * @param regulationsName
      * @return
      */
-    public Regulations emptyRules(String regulationsName) {
-        Regulations regulations = Regulations.createRegulations(regulationsName);
+    public final Regulations emptyRules(String regulationsName, Mode mode) {
+        Regulations regulations = Regulations.createRegulations(regulationsName, mode);
         if(regulationsHashMap.containsKey(regulationsName))
         {
             throw new IllegalArgumentException("该规则集合已经存在");

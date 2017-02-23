@@ -1,5 +1,6 @@
 package elidation;
 
+import elidation.config.Mode;
 import net.sf.json.JSONObject;
 
 import java.util.HashSet;
@@ -14,35 +15,50 @@ final class RegulationsImpl implements Regulations {
 
     private final HashSet<Rule> rules;
 
-    public RegulationsImpl(String regulationName){
+    private Mode mode;
+
+    private int size;
+
+    public RegulationsImpl(String regulationName, Mode mode){
         this.regulationName = regulationName;
         rules = new HashSet<>();
+        this.mode = mode;
     }
 
-    public RegulationsImpl(String regulationName, HashSet rules)
+    public RegulationsImpl(String regulationName, HashSet rules, Mode mode)
     {
         this.regulationName = regulationName;
         this.rules = new HashSet<>(rules);
+        this.mode = mode;
     }
 
-    public RegulationsImpl(String regulationName, RegulationsImpl regulations)
+    public RegulationsImpl(String regulationName, RegulationsImpl regulations, Mode mode)
     {
-        this(regulationName, regulations.rules);
+        this(regulationName, regulations.rules, mode);
+    }
+
+    public Mode getMode() {
+        return mode;
+    }
+
+    public void setMode(Mode mode) {
+        this.mode = mode;
     }
 
     @Override
     public Regulations addRule(Rule rule) {
         rules.add(rule);
+        size++;
         return this;
     }
 
     @Override
-    public boolean containsRole(Rule rule) {
+    public boolean containsRule(Rule rule) {
         return rules.contains(rule);
     }
 
     @Override
-    public boolean containsRole(String name) {
+    public boolean containsRule(String name) {
         return rules.contains(Rule.createRole(name, ""));
     }
 
@@ -63,7 +79,9 @@ final class RegulationsImpl implements Regulations {
             if(rule.getName().equals(name))
                 rules.remove(rule);
         }
+        size--;
     }
+
 
     /**
      * 递归校验JSONObject
@@ -74,23 +92,46 @@ final class RegulationsImpl implements Regulations {
         for(Object keyObj:jsonObject.keySet())
         {
             String key = String.valueOf(keyObj);
-            if(containsRole(key))
+            if(containsRule(key))
             {
                 Object value = jsonObject.get(key);
                 if(value instanceof JSONObject)
                     validate((JSONObject)value);
                 getRule(key).validate(String.valueOf(value));
+            }else if(mode==Mode.STRICT)
+            {
+                throw new RuntimeException("不存在key: [" + key + "]");
             }
         }
     }
 
     @Override
     public void validate(String key, String value) {
-        if(containsRole(key))
+        if(containsRule(key))
         {
             getRule(key).validate(value);
+        }else if(mode==Mode.STRICT)
+        {
+            throw new RuntimeException("不存在key: [" + key + "]");
         }
     }
 
+    @Override
+    public void validate(String jsonStr) {
+        validate(JSONObject.fromObject(jsonStr));
+    }
 
+
+    @Override
+    public boolean isEmpty() {
+        return size==0;
+    }
+
+    @Override
+    public String toString() {
+        return "RegulationsImpl{" +
+                "regulationName='" + regulationName + '\'' +
+                ", rules=" + rules +
+                '}';
+    }
 }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation>
+    <!--distinct=true时生成空的集合, 否则会继承publicRegulations的全部规则-->
+    <regulations name="shabi" distinct="true" mode="strict">
+        <rule>
+            <name>cat</name>
+            <regex>cat</regex>
+            <msg>不是cat</msg>
+        </rule>
+    </regulations>
+
+</validation>
+

@@ -172,4 +172,12 @@ final class RuleImpl implements Rule {
     public int hashCode() {
         return name.hashCode();
     }
+
+    @Override
+    public String toString() {
+        return "RuleImpl{" +
+                "name='" + name + '\'' +
+                ", regex='" + regex + '\'' +
+                '}';
+    }
 }

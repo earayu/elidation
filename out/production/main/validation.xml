@@ -32,7 +32,7 @@ e        </rule>
     </regulations>
 
     <!--distinct=true时生成空的集合, 否则会继承publicRegulations的全部规则-->
-    <regulations distinct="true">
+    <regulations name="eee" distinct="true">
         <rule>
             <name>eee</name>
             <regex>eeeee</regex>
